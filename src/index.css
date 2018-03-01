@@ -1,0 +1,18 @@
+html,
+body,
+#root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  -webkit-app-region: drag;
+}
+
+*,
+*:before,
+*:after {
+  min-height: 0;
+  min-width: 0;
+}

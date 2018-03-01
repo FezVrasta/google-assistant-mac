@@ -1,0 +1,50 @@
+{
+  "name": "mac-google-assistant",
+  "version": "0.1.0",
+  "private": true,
+  "homepage": "./",
+  "main": "public/electron.js",
+  "dependencies": {
+    "electron-google-oauth": "^2.0.0",
+    "electron-is-dev": "^0.3.0",
+    "emotion": "^9.0.2",
+    "google-assistant-node": "^0.0.12",
+    "googleapis": "^26.0.1",
+    "mic": "^2.1.2",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0",
+    "react-emotion": "^9.0.2",
+    "react-scripts": "1.1.1",
+    "speaker": "^0.4.0"
+  },
+  "scripts": {
+    "start": "concurrently \"BROWSER=none yarn start:react\" \"wait-on http://localhost:3000 && yarn start:electron\"",
+    "build": "react-scripts build",
+    "preelectron-pack": "yarn build",
+    "electron-pack": "build --em.main=build/electron.js",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "start:electron": "electron .",
+    "start:react": "react-scripts start",
+    "pack": "build --dir",
+    "dist": "yarn build && build",
+    "postinstall": "install-app-deps"
+  },
+  "build": {
+    "appId": "com.example.electron-cra",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^3.5.1",
+    "electron": "^1.8.2",
+    "electron-builder": "^20.2.0",
+    "flow-bin": "^0.66.0",
+    "wait-on": "^2.1.0"
+  }
+}
