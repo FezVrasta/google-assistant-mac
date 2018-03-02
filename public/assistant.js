@@ -2,6 +2,8 @@ const GoogleAssistant = require('google-assistant-node');
 const path = require('path');
 const Speaker = require('speaker');
 const Microphone = require('mic');
+const electron = require('electron');
+const fs = require('fs');
 const { google: { auth: { OAuth2 } } } = require('googleapis');
 const electronGoogleOauth = require('./electron-google-oauth');
 const clientSecret = require('./client_secret.json');
@@ -9,10 +11,18 @@ const clientSecret = require('./client_secret.json');
 const constants = GoogleAssistant.Constants;
 const encodings = constants.Encoding;
 
-const tokenStore = path.resolve(
-  require('os').homedir(),
-  '/.google-assistant-mac/tokens.json'
-);
+function parseDataFile(filePath, defaults) {
+  // We'll try/catch it in case the file doesn't exist yet, which will be the case on the first application run.
+  // `fs.readFileSync` will return a JSON string which we then parse into a Javascript object
+  try {
+    return JSON.parse(fs.readFileSync(filePath));
+  } catch (error) {
+    // if there was some kind of error, return the passed in defaults instead.
+    return defaults;
+  }
+}
+
+const tokenStore = path.join(electron.app.getPath('userData'), 'tokens.json');
 
 // setup the speaker
 const speaker = new Speaker({
@@ -106,16 +116,34 @@ const googleOauth = electronGoogleOauth({
 });
 
 module.exports = async () => {
-  //retrieve access token and refresh token
-  const token = await googleOauth.getAccessToken(
-    ['https://www.googleapis.com/auth/assistant-sdk-prototype'],
-    clientSecret.installed.client_id,
-    clientSecret.installed.client_secret
-  );
-  authClient.setCredentials({
-    access_token: token.access_token,
-    refresh_token: token.refresh_token,
-  });
+  const existingToken = parseDataFile(tokenStore);
+
+  if (existingToken) {
+    authClient.setCredentials({
+      access_token: existingToken.access_token,
+      refresh_token: existingToken.refresh_token,
+    });
+
+    const token = await new Promise(done =>
+      authClient.refreshAccessToken((err, token) => done(token))
+    );
+    console.log(tokenStore);
+    fs.writeFileSync(tokenStore, JSON.stringify(token));
+  } else {
+    //retrieve access token and refresh token
+    const token = await googleOauth.getAccessToken(
+      ['https://www.googleapis.com/auth/assistant-sdk-prototype'],
+      clientSecret.installed.client_id,
+      clientSecret.installed.client_secret
+    );
+
+    fs.writeFileSync(tokenStore, JSON.stringify(token));
+
+    authClient.setCredentials({
+      access_token: token.access_token,
+      refresh_token: token.refresh_token,
+    });
+  }
   assistant.authenticate(authClient);
   return speakCallback(assistant);
 };
